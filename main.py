@@ -53,16 +53,17 @@ def get_current_image():
   y1 = y0 + canvas.winfo_height()
   return ImageGrab.grab((x0, y0, x1, y1))
 
-def save_image(event, filename='img.png'):
+def save_image(filename='img.png'):
   im = get_current_image()
   im.save(filename)
 
 # window
 window = tk.Tk()
 window.geometry('800x700')
+window.title('Simple Paint')
 
 # variables
-brush_size = tk.IntVar(window, 1)
+brush_size = tk.IntVar(window, 5)
 selected_tool = tk.StringVar(window, 'brush')
 start_position = (0,0)
 image = None
@@ -74,19 +75,24 @@ canvas.pack()
 image = get_current_image()
 
 tk.Label(text='brush size').pack()
-brush_size_entry = tk.Entry(textvariable=brush_size)
-brush_size_entry.pack()
+brush_size_selection = ttk.Combobox(textvariable=brush_size)
+brush_size_selection['values'] = tuple(range(1,21))
+brush_size_selection.pack()
 
 tk.Label(text='tool').pack()
 tool_selection = ttk.Combobox(textvariable=selected_tool)
 tool_selection['values'] = ('brush', 'line', 'rectangle')
 tool_selection.pack()
 
+menu = tk.Menu()
+menu.add_command(label = 'save', command = save_image)
+window.configure(menu=menu)
+
 # events
 canvas.bind('<B1-Motion>', handle_mouse_motion)
 canvas.bind('<ButtonPress-1>', handle_mouse_press)
 canvas.bind('<ButtonRelease-1>', handle_mouse_release)
-window.bind('<Control-s>', save_image)
+window.bind('<Control-s>', lambda e: save_image())
 
 
 window.mainloop()
