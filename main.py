@@ -3,27 +3,35 @@ from tkinter import ttk
 from PIL import Image, ImageGrab, ImageTk
 
 
+def set_previous_image():
+  global canvas_image
+  canvas_image = ImageTk.PhotoImage(image)
+  canvas.create_image((0,0),image=canvas_image, anchor=tk.NW)
+
 def brush(event):
   canvas.create_oval((event.x-brush_size.get()/2, event.y-brush_size.get()/2, event.x+brush_size.get()/2, event.y+brush_size.get()/2), fill='black')
 
-def line(end_position, preview=False):
+def shape(end_position, preview=False, type='line'):
   if(preview):
-    global canvas_image
-    canvas_image = ImageTk.PhotoImage(current_image)
-    canvas.create_image((0,0),image=canvas_image, anchor=tk.NW)
-  canvas.create_line((start_position[0], start_position[1], end_position.x, end_position.y), width=brush_size.get())
+    set_previous_image()
+  match type:
+    case 'line':
+      canvas.create_line((start_position[0], start_position[1], end_position.x, end_position.y), width=brush_size.get())
+    case 'rectangle':
+      canvas.create_rectangle((start_position[0], start_position[1], end_position.x, end_position.y), outline='black')
 
 def handle_mouse_press(event):
   global start_position
-  global current_image
-  current_image = get_current_image()
+  global image
+  image = get_current_image()
   start_position = (event.x, event.y)
-  
 
 def handle_mouse_release(event):
   match selected_tool.get():
     case 'line':
-      line(event)
+      shape(event, type='line')
+    case 'rectangle':
+      shape(event, type='rectangle')
     case _:
       pass
 
@@ -32,7 +40,9 @@ def handle_mouse_motion(event):
     case 'brush':
       brush(event)
     case 'line':
-      line(event, preview=True)
+      shape(event, type='line', preview=True)
+    case 'rectangle':
+      shape(event, type='rectangle', preview=True)
     case _:
       pass
 
@@ -55,13 +65,13 @@ window.geometry('800x700')
 brush_size = tk.IntVar()
 selected_tool = tk.StringVar()
 start_position = (0,0)
-current_image = None
+image = None
 canvas_image = None
 
 # widgets
 canvas = tk.Canvas(window, bg='white', width=800, height=600)
 canvas.pack()
-current_image = get_current_image()
+image = get_current_image()
 
 tk.Label(text='brush size').pack()
 brush_size_entry = tk.Entry(textvariable=brush_size)
