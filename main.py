@@ -18,7 +18,7 @@ def shape(end_position, preview=False, type='line'):
     case 'line':
       canvas.create_line((start_position[0], start_position[1], end_position.x, end_position.y), width=brush_size.get())
     case 'rectangle':
-      canvas.create_rectangle((start_position[0], start_position[1], end_position.x, end_position.y), outline='black')
+      canvas.create_rectangle((start_position[0], start_position[1], end_position.x, end_position.y), outline='black', width=brush_size.get())
 
 def handle_mouse_press(event):
   global start_position
@@ -62,8 +62,8 @@ window = tk.Tk()
 window.geometry('800x700')
 
 # variables
-brush_size = tk.IntVar()
-selected_tool = tk.StringVar()
+brush_size = tk.IntVar(window, 1)
+selected_tool = tk.StringVar(window, 'brush')
 start_position = (0,0)
 image = None
 canvas_image = None
@@ -78,8 +78,9 @@ brush_size_entry = tk.Entry(textvariable=brush_size)
 brush_size_entry.pack()
 
 tk.Label(text='tool').pack()
-tool_entry = tk.Entry(textvariable=selected_tool)
-tool_entry.pack()
+tool_selection = ttk.Combobox(textvariable=selected_tool)
+tool_selection['values'] = ('brush', 'line', 'rectangle')
+tool_selection.pack()
 
 # events
 canvas.bind('<B1-Motion>', handle_mouse_motion)
