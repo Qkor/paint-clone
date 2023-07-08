@@ -15,6 +15,12 @@ def set_image():
   canvas_image = ImageTk.PhotoImage(image)
   canvas.create_image((0,0),image=canvas_image, anchor=tk.NW)
 
+def clear_image():
+  canvas.delete("all")
+  canvas.config(width=800, height=600)
+  global filename
+  filename = ''
+
 def brush(event):
   canvas.create_oval((event.x-brush_size.get()/2, event.y-brush_size.get()/2, event.x+brush_size.get()/2, event.y+brush_size.get()/2), fill=selected_color, outline=selected_color)
 
@@ -63,15 +69,27 @@ def get_current_image():
   y1 = y0 + canvas.winfo_height()
   return ImageGrab.grab((x0, y0, x1, y1))
 
-def save_image():
+def save_image_as():
   im = get_current_image()
+  global filename
   filename = filedialog.asksaveasfilename()
   try:
     im.save(filename)
   except:
-    print('could not save the file')
+    tk.messagebox.showerror(window, message='Could not save the file')
+
+def save_image():
+  if not len(filename):
+    save_image_as()
+  else:
+    im = get_current_image()
+    try:
+      im.save(filename)
+    except:
+      tk.messagebox.showerror(window, message='Could not save the file')
 
 def load_image():
+  global filename
   filename = filedialog.askopenfilename()
   try:
     global image
@@ -79,7 +97,7 @@ def load_image():
     canvas.config(width=image.width, height=image.height)
     set_image()
   except:
-    print('could not open the file')
+    tk.messagebox.showerror(window, message='Could not open the file')
 
 # window
 window = tk.Tk()
@@ -87,6 +105,7 @@ window.geometry('1000x600')
 window.title('Simple Paint')
 
 # variables
+filename = ''
 brush_size = tk.IntVar(window, 5)
 selected_tool = tk.StringVar(window, 'brush')
 selected_color = '#000000'
@@ -103,7 +122,7 @@ canvas = tk.Canvas(window, bg='white', width=800, height=600)
 canvas.pack(side='top', anchor=tk.NW)
 image = get_current_image()
 
-tk.Label(tools_frame, text='brush size').pack(side='top')
+tk.Label(tools_frame, text='size').pack(side='top')
 brush_size_selection = ttk.Combobox(tools_frame, textvariable=brush_size)
 brush_size_selection['values'] = tuple(range(1,21))
 brush_size_selection.pack(side='top')
@@ -118,8 +137,10 @@ color_button = tk.Button(tools_frame, command=choose_color, bg=selected_color, a
 color_button.pack(side='top')
 
 menu = tk.Menu()
-menu.add_command(label = 'Save', command = save_image)
+menu.add_command(label = 'New', command = clear_image)
 menu.add_command(label = 'Open', command = load_image)
+menu.add_command(label = 'Save as', command = save_image_as)
+menu.add_command(label = 'Save', command = save_image)
 window.configure(menu=menu)
 
 
@@ -129,6 +150,7 @@ canvas.bind('<ButtonPress-1>', handle_mouse_press)
 canvas.bind('<ButtonRelease-1>', handle_mouse_release)
 window.bind('<Control-s>', lambda e: save_image())
 window.bind('<Control-o>', lambda e: load_image())
+window.bind('<Control-n>', lambda e: clear_image())
 
 
 window.mainloop()
