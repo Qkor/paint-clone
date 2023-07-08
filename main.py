@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk, filedialog
 from PIL import Image, ImageGrab, ImageTk
 from tkinter.colorchooser import askcolor
 
@@ -9,7 +9,8 @@ def choose_color():
   selected_color = askcolor()[1]
   color_button.config(bg = selected_color, activebackground = selected_color)
 
-def set_previous_image():
+def set_image():
+  canvas.delete("all")
   global canvas_image
   canvas_image = ImageTk.PhotoImage(image)
   canvas.create_image((0,0),image=canvas_image, anchor=tk.NW)
@@ -17,9 +18,10 @@ def set_previous_image():
 def brush(event):
   canvas.create_oval((event.x-brush_size.get()/2, event.y-brush_size.get()/2, event.x+brush_size.get()/2, event.y+brush_size.get()/2), fill=selected_color, outline=selected_color)
 
+
 def shape(end_position, preview=False, type='line'):
   if(preview):
-    set_previous_image()
+    set_image()
   match type:
     case 'line':
       canvas.create_line((start_position[0], start_position[1], end_position.x, end_position.y), width=brush_size.get(), fill=selected_color)
@@ -61,9 +63,23 @@ def get_current_image():
   y1 = y0 + canvas.winfo_height()
   return ImageGrab.grab((x0, y0, x1, y1))
 
-def save_image(filename='img.png'):
+def save_image():
   im = get_current_image()
-  im.save(filename)
+  filename = filedialog.asksaveasfilename()
+  try:
+    im.save(filename)
+  except:
+    print('could not save the file')
+
+def load_image():
+  filename = filedialog.askopenfilename()
+  try:
+    global image
+    image = Image.open(filename)
+    canvas.config(width=image.width, height=image.height)
+    set_image()
+  except:
+    print('could not open the file')
 
 # window
 window = tk.Tk()
@@ -101,12 +117,10 @@ tk.Label(tools_frame, text='color').pack(side='top')
 color_button = tk.Button(tools_frame, command=choose_color, bg=selected_color, activebackground=selected_color)
 color_button.pack(side='top')
 
-
 menu = tk.Menu()
-menu.add_command(label = 'save', command = save_image)
+menu.add_command(label = 'Save', command = save_image)
+menu.add_command(label = 'Open', command = load_image)
 window.configure(menu=menu)
-
-
 
 
 # events
@@ -114,6 +128,7 @@ canvas.bind('<B1-Motion>', handle_mouse_motion)
 canvas.bind('<ButtonPress-1>', handle_mouse_press)
 canvas.bind('<ButtonRelease-1>', handle_mouse_release)
 window.bind('<Control-s>', lambda e: save_image())
+window.bind('<Control-o>', lambda e: load_image())
 
 
 window.mainloop()
