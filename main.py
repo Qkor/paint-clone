@@ -24,7 +24,7 @@ def clear_image():
 
 def brush(event):
   drawingTool = ImageDraw.Draw(image)
-  drawingTool.ellipse((event.x-brush_size.get()/2, event.y-brush_size.get()/2, event.x+brush_size.get()/2, event.y+brush_size.get()/2), fill=selected_color, outline=(0,0,0))
+  drawingTool.ellipse((event.x-brush_size.get()/2, event.y-brush_size.get()/2, event.x+brush_size.get()/2, event.y+brush_size.get()/2), fill=selected_color, outline=selected_color)
   display_image_on_canvas()
 
 def shape(end_position, preview=False, type='line'):
