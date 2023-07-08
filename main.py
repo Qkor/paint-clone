@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import ttk, filedialog
-from PIL import Image, ImageGrab, ImageTk
+from PIL import Image, ImageGrab, ImageTk, ImageDraw
 from tkinter.colorchooser import askcolor
 
 def choose_color():
@@ -9,10 +9,11 @@ def choose_color():
   selected_color = askcolor()[1]
   color_button.config(bg = selected_color, activebackground = selected_color)
 
-def set_image():
+def display_image_on_canvas(temporary=False):
   canvas.delete("all")
   global canvas_image
-  canvas_image = ImageTk.PhotoImage(image)
+  if(temporary): canvas_image = ImageTk.PhotoImage(temp_img)
+  else: canvas_image = ImageTk.PhotoImage(image)
   canvas.create_image((0,0),image=canvas_image, anchor=tk.NW)
 
 def clear_image():
@@ -22,32 +23,36 @@ def clear_image():
   filename = ''
 
 def brush(event):
-  canvas.create_oval((event.x-brush_size.get()/2, event.y-brush_size.get()/2, event.x+brush_size.get()/2, event.y+brush_size.get()/2), fill=selected_color, outline=selected_color)
-
+  drawingTool = ImageDraw.Draw(image)
+  drawingTool.ellipse((event.x-brush_size.get()/2, event.y-brush_size.get()/2, event.x+brush_size.get()/2, event.y+brush_size.get()/2), fill=selected_color, outline=(0,0,0))
+  display_image_on_canvas()
 
 def shape(end_position, preview=False, type='line'):
-  if(preview):
-    set_image()
+  global temp_img
+  temp_img = image.copy()
+  if preview: drawingTool = ImageDraw.Draw(temp_img)
+  else: drawingTool = ImageDraw.Draw(image)
   match type:
     case 'line':
-      canvas.create_line((start_position[0], start_position[1], end_position.x, end_position.y), width=brush_size.get(), fill=selected_color)
+      drawingTool.line((start_position[0], start_position[1], end_position[0], end_position[1]), width=brush_size.get(),fill=selected_color)
     case 'rectangle':
-      canvas.create_rectangle((start_position[0], start_position[1], end_position.x, end_position.y), outline=selected_color, width=brush_size.get())
+      if start_position[0] < end_position[0]:
+        drawingTool.rectangle((start_position[0], start_position[1], end_position[0], end_position[1]), outline=selected_color, width=brush_size.get())
+      else:
+        drawingTool.rectangle((end_position[0], end_position[1], start_position[0], start_position[1]), outline=selected_color, width=brush_size.get())
+
+  display_image_on_canvas(temporary=preview)
 
 def handle_mouse_press(event):
-  # if(selected_tool.get() == 'brush'):
-  #   brush(event)
   global start_position
-  global image
-  image = get_current_image()
   start_position = (event.x, event.y)
 
 def handle_mouse_release(event):
   match selected_tool.get():
     case 'line':
-      shape(event, type='line')
+      shape((event.x,event.y), type='line')
     case 'rectangle':
-      shape(event, type='rectangle')
+      shape((event.x,event.y), type='rectangle')
     case _:
       pass
 
@@ -56,25 +61,17 @@ def handle_mouse_motion(event):
     case 'brush':
       brush(event)
     case 'line':
-      shape(event, type='line', preview=True)
+      shape((event.x,event.y), type='line', preview=True)
     case 'rectangle':
-      shape(event, type='rectangle', preview=True)
+      shape((event.x,event.y), type='rectangle', preview=True)
     case _:
       pass
 
-def get_current_image():
-  x0 = canvas.winfo_rootx()
-  y0 = canvas.winfo_rooty()
-  x1 = x0 + canvas.winfo_width()
-  y1 = y0 + canvas.winfo_height()
-  return ImageGrab.grab((x0, y0, x1, y1))
-
 def save_image_as():
-  im = get_current_image()
   global filename
   filename = filedialog.asksaveasfilename()
   try:
-    im.save(filename)
+    image.save(filename)
   except:
     tk.messagebox.showerror(window, message='Could not save the file')
 
@@ -82,9 +79,8 @@ def save_image():
   if not len(filename):
     save_image_as()
   else:
-    im = get_current_image()
     try:
-      im.save(filename)
+      image.save(filename)
     except:
       tk.messagebox.showerror(window, message='Could not save the file')
 
@@ -95,7 +91,7 @@ def load_image():
     global image
     image = Image.open(filename)
     canvas.config(width=image.width, height=image.height)
-    set_image()
+    display_image_on_canvas()
   except:
     tk.messagebox.showerror(window, message='Could not open the file')
 
@@ -110,9 +106,8 @@ brush_size = tk.IntVar(window, 5)
 selected_tool = tk.StringVar(window, 'brush')
 selected_color = '#000000'
 start_position = (0,0)
-image = None
-canvas_image = None
 color = (0,0,0)
+
 
 # widgets
 tools_frame = tk.Frame(window)
@@ -120,7 +115,6 @@ tools_frame.pack(side='left', fill=tk.BOTH)
 
 canvas = tk.Canvas(window, bg='white', width=800, height=600)
 canvas.pack(side='top', anchor=tk.NW)
-image = get_current_image()
 
 tk.Label(tools_frame, text='size').pack(side='top')
 brush_size_selection = ttk.Combobox(tools_frame, textvariable=brush_size)
@@ -152,5 +146,9 @@ window.bind('<Control-s>', lambda e: save_image())
 window.bind('<Control-o>', lambda e: load_image())
 window.bind('<Control-n>', lambda e: clear_image())
 
+# image
+image = Image.new('RGB', (800, 600), (255, 255, 255))
+temp_img = image.copy()
+display_image_on_canvas()
 
 window.mainloop()
